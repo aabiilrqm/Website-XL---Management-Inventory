@@ -8,14 +8,14 @@ import { stats } from "@/lib/dummy-data";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="flex">
+    <main className="h-screen overflow-hidden bg-slate-50 text-slate-900">
+      <div className="flex h-full">
         <Sidebar />
 
-        <section className="min-w-0 flex-1">
+        <section className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
           <Topbar />
 
-          <div className="space-y-6 p-6">
+          <div className="flex-1 space-y-6 overflow-y-auto p-6">
             <section className="rounded-4xl bg-linear-to-r from-[#0E33BC] via-blue-700 to-slate-900 p-6 text-white shadow-sm">
               <div className="max-w-3xl">
                 <p className="text-sm font-medium text-blue-100">
