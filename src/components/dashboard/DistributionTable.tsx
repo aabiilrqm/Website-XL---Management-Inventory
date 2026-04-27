@@ -11,7 +11,7 @@ export default function DistributionTable() {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-left text-sm">
+        <table className="w-full min-w-180 text-left text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-slate-500">
               <th className="pb-3 font-semibold">Tanggal</th>
