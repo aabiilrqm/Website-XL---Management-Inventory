@@ -1,37 +1,31 @@
+// components/dashboard/Sidebar.tsx
+"use client";
+
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
   Store,
   Truck,
-  ClipboardList,
+  Bell,
+  User,
   Settings,
 } from "lucide-react";
 
 const menuItems = [
-  {
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    active: true,
-  },
-  {
-    label: "Inventory",
-    icon: Package,
-  },
-  {
-    label: "Distribusi",
-    icon: Truck,
-  },
-  // {
-  //   label: "Request Stok",
-  //   icon: ClipboardList,
-  // },
-  {
-    label: "Pengaturan",
-    icon: Settings,
-  },
+  { label: "Dashboard", icon: LayoutDashboard, path: "/" },
+  { label: "Stok Produk", icon: Package, path: "/stok-produk" },
+  { label: "Gudang", icon: Store, path: "/gudang" },
+  { label: "Distribusi", icon: Truck, path: "/distribusi" },
+  { label: "Notifikasi", icon: Bell, path: "/notifikasi" },
+  { label: "Profil", icon: User, path: "/profil" },
+  { label: "Pengaturan", icon: Settings, path: "/pengaturan" },
 ];
 
 export default function Sidebar() {
+  const pathname = usePathname();
+  const router = useRouter();
+
   return (
     <aside className="hidden min-h-screen w-72 border-r border-slate-200 bg-white px-5 py-6 lg:block">
       <div className="mb-10">
@@ -41,7 +35,7 @@ export default function Sidebar() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-slate-900">Inventory XL</h1>
-            <p className="text-sm text-slate-500">Makassar Warehouse</p>
+            <p className="text-sm text-slate-500">Sulawesi Selatan</p>
           </div>
         </div>
       </div>
@@ -49,12 +43,14 @@ export default function Sidebar() {
       <nav className="space-y-2">
         {menuItems.map((item) => {
           const Icon = item.icon;
+          const isActive = pathname === item.path;
 
           return (
             <button
               key={item.label}
+              onClick={() => router.push(item.path)}
               className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium transition ${
-                item.active
+                isActive
                   ? "bg-[#0E33BC] text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
