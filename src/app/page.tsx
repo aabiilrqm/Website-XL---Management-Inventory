@@ -1,3 +1,5 @@
+"use client";
+
 import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
 import StatCard from "@/components/dashboard/StatCard";
@@ -5,8 +7,10 @@ import StockAlert from "@/components/dashboard/StockAlert";
 import StoreRequestList from "@/components/dashboard/StoreRequestList";
 import DistributionTable from "@/components/dashboard/DistributionTable";
 import { stats } from "@/lib/dummy-data";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  // const router = useRouter();
   return (
     <main className="h-screen overflow-hidden bg-slate-50 text-slate-900">
       <div className="flex h-full">

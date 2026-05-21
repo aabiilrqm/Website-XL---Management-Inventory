@@ -18,17 +18,13 @@ const menuItems = [
     icon: Package,
   },
   {
-    label: "Toko Mitra",
-    icon: Store,
-  },
-  {
     label: "Distribusi",
     icon: Truck,
   },
-  {
-    label: "Request Stok",
-    icon: ClipboardList,
-  },
+  // {
+  //   label: "Request Stok",
+  //   icon: ClipboardList,
+  // },
   {
     label: "Pengaturan",
     icon: Settings,
