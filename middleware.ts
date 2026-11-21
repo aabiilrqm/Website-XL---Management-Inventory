@@ -10,7 +10,6 @@ export function middleware(request: NextRequest) {
     "/",
     "/stok-produk",
     "/gudang",
-    "/notifikasi",
     "/profil",
     "/pengaturan",
   ];

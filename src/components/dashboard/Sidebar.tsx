@@ -6,8 +6,6 @@ import {
   LayoutDashboard,
   Package,
   Store,
-  Truck,
-  Bell,
   User,
   Settings,
 } from "lucide-react";
@@ -16,8 +14,6 @@ const menuItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/" },
   { label: "Stok Produk", icon: Package, path: "/stok-produk" },
   { label: "Gudang", icon: Store, path: "/gudang" },
-  { label: "Distribusi", icon: Truck, path: "/distribusi" },
-  { label: "Notifikasi", icon: Bell, path: "/notifikasi" },
   { label: "Profil", icon: User, path: "/profil" },
   { label: "Pengaturan", icon: Settings, path: "/pengaturan" },
 ];
@@ -43,7 +39,7 @@ export default function Sidebar() {
       <nav className="space-y-2">
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.path;
+          const isActive = pathname === item.path || (item.path === "/" && pathname === "/dashboard");
 
           return (
             <button
@@ -65,7 +61,7 @@ export default function Sidebar() {
       <div className="mt-10 rounded-3xl bg-slate-50 p-4">
         <p className="text-sm font-semibold text-slate-900">Role Aktif</p>
         <p className="mt-1 text-sm text-slate-500">
-          Admin gudang dapat melihat stok utama, request toko, dan distribusi.
+          Pantau ringkasan persediaan, rincian stok produk, dan rekap gudang.
         </p>
       </div>
     </aside>

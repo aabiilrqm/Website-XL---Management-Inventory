@@ -1,172 +1,79 @@
 "use client";
-
-/**
- * DataContext.tsx
- * ─────────────────────────────────────────────────────────────────────────────
- * Path : src/context/DataContext.tsx
- *
- * React Context global untuk data inventori XL.
- *
- * Cara pakai di halaman / komponen:
- *   import { useData } from "@/context/DataContext";
- *   const { data, loading, error, refresh, uploadFile, resetData } = useData();
- *
- * ─── State yang tersedia ─────────────────────────────────────────────────────
- *   data        : ParsedData | null   → seluruh data parsed dari Excel
- *   loading     : boolean             → sedang fetch / upload
- *   error       : string | null       → pesan error terakhir
- *   uploadState : UploadState         → status upload file
- *
- * ─── Action yang tersedia ────────────────────────────────────────────────────
- *   refresh()             → fetch ulang data dari GET /api/data
- *   uploadFile(file)      → POST file ke /api/upload, lalu refresh
- *   resetData()           → DELETE /api/data (hapus data, kembali ke kosong)
- * ─────────────────────────────────────────────────────────────────────────────
- */
-
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-
-import type { ParsedData } from "@/lib/excel-parser";
-
-// ── Tipe ─────────────────────────────────────────────────────────────────────
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import type { ParsedData, ImportOptions } from "@/lib/excel-parser";
 
 export type UploadState =
   | { status: "idle" }
   | { status: "uploading"; fileName: string }
   | { status: "success"; fileName: string; reportMonth: string }
   | { status: "error"; message: string };
-
 interface DataContextValue {
-  /** Seluruh data hasil parsing Excel. null = belum ada data. */
-  data: ParsedData | null;
-  /** True selama fetch awal atau refresh berlangsung. */
-  loading: boolean;
-  /** Pesan error fetch terakhir. null jika tidak ada error. */
-  error: string | null;
-  /** Status proses upload file Excel. */
-  uploadState: UploadState;
-
-  /** Fetch ulang data dari server (/api/data). */
-  refresh: () => Promise<void>;
-  /** Upload file .xlsx ke /api/upload lalu refresh data. */
-  uploadFile: (file: File) => Promise<void>;
-  /** Reset data server (DELETE /api/data) lalu clear state lokal. */
+  data: ParsedData | null; loading: boolean; error: string | null; uploadState: UploadState;
+  refresh: () => Promise<void>; uploadFile: (file: File, options?: ImportOptions) => Promise<boolean>;
   resetData: () => Promise<void>;
 }
-
-// ── Context ───────────────────────────────────────────────────────────────────
-
 const DataContext = createContext<DataContextValue | null>(null);
-
-// ── Provider ──────────────────────────────────────────────────────────────────
-
+async function readData(): Promise<ParsedData | null> {
+  const res = await fetch("/api/data", { cache: "no-store" });
+  const json = await res.json();
+  if (!res.ok || !json.success) throw new Error(json.error ?? "Gagal memuat laporan.");
+  return json.data ?? null;
+}
+const message = (err: unknown) => err instanceof Error ? err.message : "Terjadi kesalahan jaringan.";
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<ParsedData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>({ status: "idle" });
-
-  // ── Fetch data dari server ──────────────────────────────────────────────────
+  const version = useRef(0);
   const refresh = useCallback(async () => {
-    setLoading(true);
+    const request = ++version.current;
+    setLoading(true); setError(null);
+    try { const next = await readData(); if (version.current === request) setData(next); }
+    catch (err) { if (version.current === request) setError(message(err)); }
+    finally { if (version.current === request) setLoading(false); }
+  }, []);
+  useEffect(() => {
+    const request = ++version.current;
+    let active = true;
+    readData().then(next => { if (active && version.current === request) setData(next); })
+      .catch(err => { if (active && version.current === request) setError(message(err)); })
+      .finally(() => { if (active && version.current === request) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+  const uploadFile = useCallback(async (file: File, options?: ImportOptions) => {
+    setUploadState({ status: "uploading", fileName: file.name });
     setError(null);
     try {
-      const res = await fetch("/api/data");
+      const form = new FormData(); form.append("file", file);
+      if (options) form.append("mapping", JSON.stringify(options));
+      const res = await fetch("/api/upload", { method: "POST", body: form });
       const json = await res.json();
-
-      if (!json.success) {
-        throw new Error(json.error ?? "Gagal memuat data dari server.");
-      }
-
-      setData(json.data ?? null);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Terjadi kesalahan jaringan.";
-      setError(msg);
-    } finally {
-      setLoading(false);
+      if (!res.ok || !json.success) throw new Error(json.error ?? "Gagal mengimpor laporan.");
+      version.current++;
+      setData(json.data); setLoading(false);
+      setUploadState({ status: "success", fileName: file.name, reportMonth: json.data.reportMonth });
+      return true;
+    } catch (err) {
+      setUploadState({ status: "error", message: message(err) });
+      return false;
     }
   }, []);
-
-  // ── Upload file Excel ───────────────────────────────────────────────────────
-  const uploadFile = useCallback(
-    async (file: File) => {
-      setUploadState({ status: "uploading", fileName: file.name });
-      setError(null);
-
-      try {
-        const form = new FormData();
-        form.append("file", file);
-
-        const res = await fetch("/api/upload", { method: "POST", body: form });
-        const json = await res.json();
-
-        if (!json.success) {
-          throw new Error(json.error ?? "Gagal mengupload file.");
-        }
-
-        setUploadState({
-          status: "success",
-          fileName: json.fileName,
-          reportMonth: json.data?.reportMonth ?? "",
-        });
-
-        // Refresh context dengan data terbaru dari server
-        await refresh();
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat upload.";
-        setUploadState({ status: "error", message: msg });
-        setError(msg);
-      }
-    },
-    [refresh]
-  );
-
-  // ── Reset data ──────────────────────────────────────────────────────────────
   const resetData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    const request = ++version.current;
+    setLoading(true); setError(null);
     try {
       const res = await fetch("/api/data", { method: "DELETE" });
       const json = await res.json();
-      if (!json.success) {
-        throw new Error(json.error ?? "Gagal mereset data.");
-      }
-      setData(null);
-      setUploadState({ status: "idle" });
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat reset.";
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
+      if (!res.ok || !json.success) throw new Error(json.error ?? "Gagal mereset laporan.");
+      if (request === version.current) { setData(null); setUploadState({ status: "idle" }); }
+    } catch (err) { if (request === version.current) setError(message(err)); }
+    finally { if (request === version.current) setLoading(false); }
   }, []);
-
-  // ── Fetch awal saat mount ───────────────────────────────────────────────────
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  return (
-    <DataContext.Provider
-      value={{ data, loading, error, uploadState, refresh, uploadFile, resetData }}
-    >
-      {children}
-    </DataContext.Provider>
-  );
+  return <DataContext.Provider value={{ data, loading, error, uploadState, refresh, uploadFile, resetData }}>{children}</DataContext.Provider>;
 }
-
-// ── Hook ──────────────────────────────────────────────────────────────────────
-
 export function useData(): DataContextValue {
   const ctx = useContext(DataContext);
-  if (!ctx) {
-    throw new Error("useData harus dipakai di dalam <DataProvider>.");
-  }
+  if (!ctx) throw new Error("useData harus dipakai di dalam DataProvider.");
   return ctx;
 }

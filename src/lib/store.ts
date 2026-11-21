@@ -20,6 +20,7 @@
 
 import fs   from "fs";
 import path from "path";
+import { randomUUID } from "node:crypto";
 
 import type { ParsedData } from "@/lib/excel-parser";
 
@@ -38,7 +39,13 @@ function ensureDir(): void {
 // ── Simpan data ───────────────────────────────────────────────────────────────
 export function saveData(data: ParsedData): void {
   ensureDir();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
+  const temporary = path.join(DATA_DIR, `parsed-data-${randomUUID()}.tmp`);
+  try {
+    fs.writeFileSync(temporary, JSON.stringify(data), "utf-8");
+    fs.renameSync(temporary, DATA_FILE);
+  } finally {
+    if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
+  }
 }
 
 // ── Baca data ─────────────────────────────────────────────────────────────────

@@ -1,0 +1,19 @@
+{
+  "products": 100,
+  "warehouses": ["Makassar", "Maros", "Bone", "Gowa", "Bombana"],
+  "brands": ["XL", "AXIS", "SMARTFREN"],
+  "categories": ["SP", "PV"],
+  "period": "November 2026",
+  "stockMin": 100,
+  "stockMax": 2000,
+  "minStock": 100,
+  "priceMin": 500,
+  "priceMax": 100000,
+  "emptyPercent": 15,
+  "lowPercent": 20,
+  "criticalPercent": 10,
+  "emptyWarehouses": ["Bombana"],
+  "seed": 42,
+  "format": "matrix",
+  "output": "src/lib/data/contoh-custom-november-2026.xlsx"
+}

@@ -1,5 +1,13 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Membuat data contoh untuk diunggah
+
+```powershell
+npm.cmd run generate:data -- --products 100 --warehouses 5 --period "November 2026"
+```
+
+Hasil default berada di `src/lib/data/simulasi-stok-november-2026.xlsx`. Jumlah catatan stok adalah produk × gudang. Jumlah produk/gudang, nama lokasi, merek, periode, harga, stok, dan peluang status bisa dikustomisasi. Lihat [petunjuk generator](docs/generate-data.md) dan [contoh konfigurasi JSON](scripts/inventory-generator.example.json).
+
 ## Getting Started
 
 First, run the development server:

@@ -2,34 +2,14 @@
 
 import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
-import {
-  Settings,
-  Bell,
-  Lock,
-  Moon,
-  Globe,
-  Database,
-  Shield,
-  Save,
-} from "lucide-react";
+import { Moon, Save } from "lucide-react";
 import { useState } from "react";
 
 export default function PengaturanPage() {
   const [settings, setSettings] = useState({
-    notifications: {
-      stockAlert: true,
-      newRequest: true,
-      distributionUpdate: false,
-      weeklyReport: true,
-    },
     appearance: {
       darkMode: false,
       compact: false,
-    },
-    language: "id",
-    security: {
-      twoFactor: false,
-      sessionTimeout: "30",
     },
   });
 
@@ -52,7 +32,7 @@ export default function PengaturanPage() {
                   Pengaturan
                 </h1>
                 <p className="text-sm text-slate-500">
-                  Konfigurasi sistem dan preferensi akun
+                  Preferensi tampilan aplikasi
                 </p>
               </div>
               <button
@@ -65,94 +45,6 @@ export default function PengaturanPage() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
-              {/* Notifikasi */}
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="mb-4 flex items-center gap-2">
-                  <Bell className="h-5 w-5 text-[#0E33BC]" />
-                  <h3 className="text-lg font-bold text-slate-900">
-                    Notifikasi
-                  </h3>
-                </div>
-                <div className="space-y-3">
-                  <label className="flex cursor-pointer items-center justify-between">
-                    <span className="text-sm text-slate-700">
-                      Peringatan stok menipis
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={settings.notifications.stockAlert}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          notifications: {
-                            ...settings.notifications,
-                            stockAlert: e.target.checked,
-                          },
-                        })
-                      }
-                      className="h-5 w-5 rounded border-slate-300 text-[#0E33BC] focus:ring-[#0E33BC]"
-                    />
-                  </label>
-                  <label className="flex cursor-pointer items-center justify-between">
-                    <span className="text-sm text-slate-700">
-                      Request stok baru
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={settings.notifications.newRequest}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          notifications: {
-                            ...settings.notifications,
-                            newRequest: e.target.checked,
-                          },
-                        })
-                      }
-                      className="h-5 w-5 rounded border-slate-300 text-[#0E33BC] focus:ring-[#0E33BC]"
-                    />
-                  </label>
-                  <label className="flex cursor-pointer items-center justify-between">
-                    <span className="text-sm text-slate-700">
-                      Update distribusi
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={settings.notifications.distributionUpdate}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          notifications: {
-                            ...settings.notifications,
-                            distributionUpdate: e.target.checked,
-                          },
-                        })
-                      }
-                      className="h-5 w-5 rounded border-slate-300 text-[#0E33BC] focus:ring-[#0E33BC]"
-                    />
-                  </label>
-                  <label className="flex cursor-pointer items-center justify-between">
-                    <span className="text-sm text-slate-700">
-                      Laporan mingguan
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={settings.notifications.weeklyReport}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          notifications: {
-                            ...settings.notifications,
-                            weeklyReport: e.target.checked,
-                          },
-                        })
-                      }
-                      className="h-5 w-5 rounded border-slate-300 text-[#0E33BC] focus:ring-[#0E33BC]"
-                    />
-                  </label>
-                </div>
-              </div>
-
               {/* Tampilan */}
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="mb-4 flex items-center gap-2">
@@ -199,73 +91,6 @@ export default function PengaturanPage() {
                 </div>
               </div>
 
-              {/* Bahasa & Keamanan */}
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="mb-4 flex items-center gap-2">
-                  <Globe className="h-5 w-5 text-[#0E33BC]" />
-                  <h3 className="text-lg font-bold text-slate-900">Bahasa</h3>
-                </div>
-                <select
-                  value={settings.language}
-                  onChange={(e) =>
-                    setSettings({ ...settings, language: e.target.value })
-                  }
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-[#0E33BC] focus:outline-none"
-                >
-                  <option value="id">Bahasa Indonesia</option>
-                  <option value="en">English</option>
-                </select>
-              </div>
-
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="mb-4 flex items-center gap-2">
-                  <Lock className="h-5 w-5 text-[#0E33BC]" />
-                  <h3 className="text-lg font-bold text-slate-900">Keamanan</h3>
-                </div>
-                <div className="space-y-3">
-                  <label className="flex cursor-pointer items-center justify-between">
-                    <span className="text-sm text-slate-700">
-                      Autentikasi 2 Faktor
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={settings.security.twoFactor}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          security: {
-                            ...settings.security,
-                            twoFactor: e.target.checked,
-                          },
-                        })
-                      }
-                      className="h-5 w-5 rounded border-slate-300 text-[#0E33BC] focus:ring-[#0E33BC]"
-                    />
-                  </label>
-                  <div>
-                    <label className="text-sm text-slate-700">
-                      Session Timeout (menit)
-                    </label>
-                    <input
-                      type="number"
-                      value={settings.security.sessionTimeout}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          security: {
-                            ...settings.security,
-                            sessionTimeout: e.target.value,
-                          },
-                        })
-                      }
-                      className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-[#0E33BC] focus:outline-none"
-                    />
-                  </div>
-                  <button className="w-full rounded-2xl border border-red-200 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition">
-                    Ubah Password
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </section>
