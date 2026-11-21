@@ -1,12 +1,15 @@
 // components/dashboard/Topbar.tsx
 "use client";
 
-import { Bell, Search, LogOut } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
+import UploadButton from "@/components/dashboard/UploadButton";
 import { useAuth } from "@/context/AuthContext";
+import { useData } from "@/context/DataContext";
 import { useRouter } from "next/navigation";
 
 export default function Topbar() {
   const { user, logout } = useAuth();
+  const { data } = useData();
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -23,9 +26,18 @@ export default function Topbar() {
         <h2 className="mt-1 text-2xl font-bold text-slate-900">
           Dashboard Gudang Makassar
         </h2>
+        {data && (
+          <p className="mt-0.5 text-xs text-slate-400">
+            Data: {data.reportMonth} · {data.totalProducts} produk ·{" "}
+            {data.totalDepos} depo
+          </p>
+        )}
       </div>
 
       <div className="flex items-center gap-3">
+        {/* Tombol Upload Excel */}
+        <UploadButton />
+
         <button className="relative rounded-2xl border border-slate-200 p-3 text-slate-600 hover:bg-slate-50">
           <Bell size={19} />
           <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-[#1ACAA2]" />

@@ -41,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 serviceAccountKey.json
+
+# parsed excel data (server-side JSON store)
+/data/
