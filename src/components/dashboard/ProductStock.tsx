@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { ParsedData } from "@/lib/excel-parser";
 import { stockStatus } from "@/lib/stock-status";
-import { fieldClass, fmt, panel, productKey, StatCards, StatusBadge } from "./inventory-ui";
+import { fieldClass, fmt, panel, productKey, RankingChart, stockBalances, StatCards, StatusBadge } from "./inventory-ui";
 
 export default function ProductStock({ data }: { data: ParsedData }) {
   const params = useSearchParams();
@@ -54,6 +54,14 @@ export default function ProductStock({ data }: { data: ParsedData }) {
       { title: "Menipis / kritis", value: fmt(rows.filter(row => ["Menipis", "Kritis"].includes(stockStatus(row.stock, row.minStock))).length), description: "Catatan stok di bawah minimum yang tersedia" },
       { title: "Nilai stok tercatat", value: "Rp " + fmt(rows.reduce((sum, row) => sum + (row.stock !== null && row.price !== null ? row.stock * row.price : 0), 0)), description: missingPrices ? `${fmt(missingPrices)} catatan belum memiliki stok atau harga lengkap` : "Stok × harga satuan sesuai filter" },
     ]} />
+    <div className="grid gap-4 lg:grid-cols-2">
+      <RankingChart title="Produk dengan stok terbesar" description="Lima produk dengan saldo positif terbesar setelah stok dijumlahkan di gudang sesuai filter."
+        values={stockBalances(rows, productKey, row => [row.product, row.sku, row.brand].filter(Boolean).join(" / "))}
+        unit="unit" color="#0E33BC" empty="Tidak ada produk dengan saldo positif sesuai filter." />
+      <RankingChart title="Stok menurut merek" description="Lima merek dengan saldo positif terbesar dari seluruh produk sesuai filter. Stok kosong tanpa angka dilewati."
+        values={stockBalances(rows, row => row.brand, row => row.brand || "Tanpa merek")}
+        unit="unit" color="#0f766e" empty="Tidak ada merek dengan saldo positif sesuai filter." />
+    </div>
     <section className={panel}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div><h2 className="font-bold text-slate-900">Rincian stok produk</h2><p className="mt-1 text-xs text-slate-500">Minimum dan status mengikuti masing-masing produk di gudangnya.</p></div>
@@ -72,7 +80,16 @@ export default function ProductStock({ data }: { data: ParsedData }) {
       {!rows.length && <p className="py-8 text-center text-sm text-slate-500">Tidak ada stok sesuai filter.</p>}
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
         <span>{fmt(rows.length)} catatan · halaman {currentPage + 1} / {pageCount}</span>
-        <div className="flex gap-2"><button className={fieldClass + " disabled:opacity-40"} disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Sebelumnya</button><button className={fieldClass + " disabled:opacity-40"} disabled={currentPage + 1 >= pageCount} onClick={() => setPage(currentPage + 1)}>Berikutnya</button></div>
+        <nav aria-label="Navigasi halaman stok produk" className="flex flex-wrap items-center gap-2">
+          <button className={fieldClass + " disabled:opacity-40"} disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Sebelumnya</button>
+          {pageCount > 1 && <label className="flex items-center gap-2">
+            Pilih halaman
+            <select className={fieldClass} value={currentPage + 1} onChange={event => setPage(Number(event.target.value) - 1)}>
+              {Array.from({ length: pageCount }, (_, index) => <option key={index} value={index + 1}>{index + 1}</option>)}
+            </select>
+          </label>}
+          <button className={fieldClass + " disabled:opacity-40"} disabled={currentPage + 1 >= pageCount} onClick={() => setPage(currentPage + 1)}>Berikutnya</button>
+        </nav>
       </div>
     </section>
     <details className={panel}>

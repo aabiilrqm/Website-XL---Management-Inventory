@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Upload, Loader2, X } from "lucide-react";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import { useData } from "@/context/DataContext";
 import type { ColumnOption, Field, ImportInspection, ImportMapping, ImportOptions, ParsedData } from "@/lib/excel-parser";
 
@@ -52,19 +53,20 @@ export default function UploadButton() {
   const [file, setFile] = useState<File | null>(null);
   const [inspection, setInspection] = useState<ImportInspection | null>(null);
   const [stock, setStock] = useState<ImportMapping | null>(null);
+  const [period, setPeriod] = useState("");
   const [preview, setPreview] = useState<ParsedData | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   async function request(file: File, action: string, mapping?: ImportOptions) {
     const form = new FormData(); form.append("file", file); form.append("action", action);
     if (mapping) form.append("mapping", JSON.stringify(mapping));
-    const res = await fetch("/api/upload", { method: "POST", body: form });
+    const res = await authenticatedFetch("/api/upload", { method: "POST", body: form });
     const json = await res.json();
     if (!res.ok || !json.success) throw new Error(json.error ?? "File gagal diproses.");
     return json;
   }
   async function selectFile(file: File) {
-    setFile(file); setInspection(null); setPreview(null); setError(""); setBusy(true);
+    setPeriod(""); setFile(file); setInspection(null); setPreview(null); setError(""); setBusy(true);
     dialog.current?.showModal();
     try {
       const json = await request(file, "inspect");
@@ -84,12 +86,12 @@ export default function UploadButton() {
   async function confirm() {
     if (!file || !stock || !preview) return;
     setBusy(true); setError("");
-    const ok = await uploadFile(file, { stock, movement: null });
+    const ok = await uploadFile(file, { stock, movement: null }, period);
     setBusy(false);
     if (ok) dialog.current?.close(); else setError("Impor gagal. Data sebelumnya tetap tersedia; coba pratinjau kembali.");
   }
   return <>
-    <button onClick={() => input.current?.click()} className="flex items-center gap-2 rounded-2xl bg-[#0E33BC] px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"><Upload size={16} />{data ? "Ganti laporan" : "Upload Excel"}</button>
+    <button onClick={() => input.current?.click()} className="flex items-center gap-2 rounded-2xl bg-[#0E33BC] px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"><Upload size={16} />{data ? "Tambah laporan" : "Upload Excel"}</button>
     <input ref={input} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void selectFile(f); }} />
     {uploadState.status === "error" && <span className="max-w-52 text-xs text-red-700" role="alert">{uploadState.message}</span>}
     <dialog ref={dialog} aria-label="Impor laporan stok" onCancel={e => { if (busy) e.preventDefault(); }} className="m-auto max-h-[90vh] w-[min(960px,95vw)] rounded-3xl bg-white p-6 shadow-xl backdrop:bg-slate-900/50">
@@ -112,7 +114,8 @@ export default function UploadButton() {
           <p className="text-sm text-amber-700">{preview.preprocessing.issueCount} temuan · {preview.preprocessing.duplicateRows} duplikat diabaikan · {preview.preprocessing.totalMismatches} selisih total</p>
           <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr>{["Produk", "Gudang", "Stok", "Minimum", "Sumber"].map(h => <th key={h} className="p-2">{h}</th>)}</tr></thead><tbody>{preview.stockItems.slice(0, 5).map(s => <tr key={s.id}><td className="p-2">{s.product}</td><td>{s.warehouse}</td><td>{s.stock ?? "Tidak diketahui"}</td><td>{s.minStock ?? "Tidak tersedia"}</td><td>{s.sources[0].sheet}:{s.sources[0].row}</td></tr>)}</tbody></table></div>
           {preview.preprocessing.warnings.map(w => <p key={w} className="text-xs text-slate-600">{w}</p>)}
-          <button onClick={() => void confirm()} className="rounded-xl bg-[#0E33BC] px-5 py-3 font-semibold text-white">3. Gunakan data ini</button>
+          <label className="block text-sm">Bulan laporan {preview.reportMonth === "Periode tidak diketahui" ? "(wajib)" : "(jika perlu dikoreksi)"}<input type="month" value={period} onChange={e => setPeriod(e.target.value)} className={inputClass} /></label>
+          <button disabled={!period && preview.reportMonth === "Periode tidak diketahui"} onClick={() => void confirm()} className="rounded-xl bg-[#0E33BC] px-5 py-3 font-semibold text-white">3. Gunakan data ini</button>
         </div>}
       </fieldset>}
     </dialog>

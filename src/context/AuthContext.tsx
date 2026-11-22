@@ -4,14 +4,14 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import {
   User,
-  onAuthStateChanged,
+  onIdTokenChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
   updateProfile,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 interface AuthContextType {
@@ -24,20 +24,30 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+async function syncSessionCookie(user: User | null) {
+  const token = user ? await user.getIdToken() : "";
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `firebase-auth-token=${token}; Path=/; Max-Age=${user ? 3600 : 0}; SameSite=Lax${secure}`;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onIdTokenChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
+      void syncSessionCookie(user).catch(() => {
+        document.cookie = "firebase-auth-token=; Path=/; Max-Age=0; SameSite=Lax";
+      });
     });
     return () => unsubscribe();
   }, []);
 
   const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    await syncSessionCookie(result.user);
   };
 
   const register = async (email: string, password: string, name: string) => {
@@ -47,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
     );
     await updateProfile(userCredential.user, { displayName: name });
+    await syncSessionCookie(userCredential.user);
 
     // Simpan data tambahan ke Firestore
     await setDoc(doc(db, "users", userCredential.user.uid), {
@@ -59,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     await signOut(auth);
+    await syncSessionCookie(null);
   };
 
   return (

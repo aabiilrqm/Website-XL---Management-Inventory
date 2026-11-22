@@ -14,14 +14,31 @@ const pageInfo = {
 };
 
 export default function InventoryDashboard({ view = "overview" }: { view?: keyof typeof pageInfo }) {
-  const { data, loading, error, refresh } = useData();
+  const { data, loading, error, refresh, reports = [], selected, selectReport } = useData();
   const [title, description] = pageInfo[view];
+  const month = reports.find(report => report.id === selected)?.month;
+  const months = [...new Set(reports.map(report => report.month))];
+  const versions = reports.filter(report => report.month === month);
   return <div className="space-y-6">
     <div>
       <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
       <p className="mt-1 text-sm text-slate-500">{description}</p>
       {data && <p className="mt-2 text-xs text-slate-400">Periode {data.reportMonth} · Berdasarkan laporan yang diunggah</p>}
     </div>
+    {months.length > 0 && <div className="flex flex-wrap gap-4">
+      <label className="grid gap-1 text-sm text-slate-600">Bulan laporan
+        <select className={fieldClass} value={month ?? ""} onChange={event => {
+          const latest = reports.find(report => report.month === event.target.value);
+          if (latest) void selectReport(latest.id);
+        }}>{months.map(value => <option key={value}>{value}</option>)}</select>
+      </label>
+      <label className="grid gap-1 text-sm text-slate-600">Unggahan
+        <select className={fieldClass + " max-w-full"} value={selected} onChange={event => void selectReport(event.target.value)}>
+          {versions.map(report => <option key={report.id} value={report.id}>{report.file} ? {new Date(report.uploaded).toLocaleString("id-ID")}</option>)}
+        </select>
+      </label>
+      {loading && <span role="status">Memuat laporan?</span>}
+    </div>}
     {error && <div role="alert" className={panel}>
       <p className="text-sm text-red-700">{error}</p>
       <button onClick={() => void refresh()} className={fieldClass + " mt-3"}>Coba lagi</button>

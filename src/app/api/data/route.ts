@@ -1,62 +1,13 @@
-/**
- * route.ts
- * ─────────────────────────────────────────────────────────────────────────────
- * Path : src/app/api/data/route.ts
- *
- * GET  /api/data          → kembalikan seluruh ParsedData dari file JSON
- * DELETE /api/data        → hapus data (reset ke dummy / kosong)
- *
- * ─── Response GET sukses (200) ───────────────────────────────────────────────
- * {
- *   success  : true,
- *   source   : "file" | "empty",
- *   data     : ParsedData | null
- * }
- *
- * ─── Response DELETE sukses (200) ────────────────────────────────────────────
- * { success: true, message: "Data berhasil direset." }
- *
- * ─── Response error (500) ────────────────────────────────────────────────────
- * { success: false, error: string }
- * ─────────────────────────────────────────────────────────────────────────────
- */
+﻿import { authenticated, listReports, readReport } from "@/lib/report-archive";
 
-import { NextResponse } from "next/server";
-import { loadData, clearData, hasData } from "@/lib/store";
-
-// ── GET /api/data ─────────────────────────────────────────────────────────────
-export async function GET() {
+export async function GET(request: Request) {
+  if (!await authenticated(request)) return Response.json({error:"Silakan masuk kembali."},{status:401});
   try {
-    if (!hasData()) {
-      return NextResponse.json(
-        { success: true, source: "empty", data: null },
-        { status: 200 }
-      );
-    }
-
-    const data = loadData();
-    return NextResponse.json(
-      { success: true, source: "file", data },
-      { status: 200 }
-    );
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Gagal membaca data.";
-    console.error("[GET /api/data]", err);
-    return NextResponse.json({ success: false, error: msg }, { status: 500 });
-  }
-}
-
-// ── DELETE /api/data ──────────────────────────────────────────────────────────
-export async function DELETE() {
-  try {
-    clearData();
-    return NextResponse.json(
-      { success: true, message: "Data berhasil direset." },
-      { status: 200 }
-    );
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Gagal menghapus data.";
-    console.error("[DELETE /api/data]", err);
-    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+    const reports = await listReports();
+    const id = new URL(request.url).searchParams.get("id") ?? reports[0]?.id;
+    if (id && !reports.some(report => report.id === id)) return Response.json({error:"Laporan tidak ditemukan."},{status:404});
+    return Response.json({success:true, reports, id, data:id ? await readReport(id) : null});
+  } catch {
+    return Response.json({error:"Riwayat laporan tidak dapat dibaca dari Firestore."},{status:503});
   }
 }

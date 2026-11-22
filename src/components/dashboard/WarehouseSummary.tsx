@@ -5,7 +5,7 @@ import Link from "next/link";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { ParsedData, StockItem } from "@/lib/excel-parser";
 import { stockStatus } from "@/lib/stock-status";
-import { fieldClass, fmt, needsAttention, panel, productKey, StatCards } from "./inventory-ui";
+import { fieldClass, fmt, needsAttention, panel, productKey, RankingChart, StatCards } from "./inventory-ui";
 
 export default function WarehouseSummary({ data }: { data: ParsedData }) {
   const [search, setSearch] = useState("");
@@ -19,6 +19,10 @@ export default function WarehouseSummary({ data }: { data: ParsedData }) {
   const warehouses = [...groups].map(([name, rows]) => ({
     name,
     stock: rows.reduce((sum, row) => sum + (row.stock ?? 0), 0),
+    shortage: rows.reduce((sum, row) => {
+      if (row.stock === null || row.stock < 0 || row.minStock === null) return sum;
+      return sum + Math.max(0, row.minStock - row.stock);
+    }, 0),
     products: new Set(rows.map(productKey)).size,
     empty: rows.filter(row => row.stock === 0).length,
     low: rows.filter(row => ["Menipis", "Kritis"].includes(stockStatus(row.stock, row.minStock))).length,
@@ -48,6 +52,14 @@ export default function WarehouseSummary({ data }: { data: ParsedData }) {
         <BarChart data={warehouses} layout="vertical" margin={{ left: 5, right: 25 }}><CartesianGrid strokeDasharray="3 3" horizontal={false} /><XAxis type="number" tick={{ fontSize: 11 }} /><YAxis type="category" dataKey="name" width={125} tick={{ fontSize: 11 }} /><Tooltip /><Bar dataKey="stock" name="Stok tercatat" fill="#0E33BC" radius={[0, 5, 5, 0]} /></BarChart>
       </ResponsiveContainer></div> : <p className="py-8 text-center text-sm text-slate-500">Tidak ada gudang sesuai filter.</p>}
     </section>
+    <div className="grid gap-4 lg:grid-cols-2">
+      <RankingChart title="Kekurangan stok per gudang" description="Lima gudang dengan kebutuhan pengisian terbesar. Selisih dihitung per produk di bawah minimum yang diketahui, dengan stok nol atau positif."
+        values={warehouses.map(row => ({ key: row.name, label: row.name, value: row.shortage }))}
+        unit="unit" color="#b45309" empty="Tidak ada kekurangan yang terukur untuk gudang sesuai filter." />
+      <RankingChart title="Produk habis per gudang" description="Lima gudang dengan catatan produk berstok nol terbanyak. Produk tanpa angka stok dilewati."
+        values={warehouses.map(row => ({ key: row.name, label: row.name, value: row.empty }))}
+        unit="catatan" color="#be123c" empty="Tidak ada catatan stok nol untuk gudang sesuai filter." />
+    </div>
     <section className={panel}>
       <h2 className="mb-4 font-bold text-slate-900">Rekap per gudang</h2>
       <div className="overflow-x-auto"><table className="w-full text-left text-sm">
